@@ -1,0 +1,53 @@
+name: Terraform CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  terraform-ci:
+    name: Terraform CI Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure SSH for Private Modules
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.TF_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+
+      - name: Terraform Init
+        run: terraform -chdir=infra init
+
+      - name: Terraform Validate
+        run: terraform -chdir=infra validate
+
+      - name: TFLint
+        uses: terraform-linters/setup-tflint@v4
+      - run: |
+          tflint --init
+          tflint infra
+
+      - name: TFSec
+        uses: aquasecurity/tfsec-action@v1.0.0
+        with:
+          working_directory: infra
+
+      - name: Terraform Plan
+        run: terraform -chdir=infra plan -out=tfplan
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v3
+        with:
+          name: tfplan
+          path: infra/tfplan

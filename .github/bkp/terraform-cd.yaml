@@ -1,0 +1,42 @@
+name: Terraform CD
+
+on:
+  workflow_dispatch:
+
+jobs:
+  terraform-cd:
+    name: Terraform CD Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure SSH for Private Modules
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.TF_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+
+      - name: Download Terraform Plan Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: tfplan
+          path: environments/prod/
+
+      - name: Terraform Init
+        run: terraform -chdir=environments/prod init
+
+      - name: Terraform Apply
+        run: terraform -chdir=environments/prod apply "tfplan"
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
