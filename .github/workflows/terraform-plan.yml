@@ -38,15 +38,18 @@ jobs:
 
       - name: Inicializar Terraform
         run: terraform init
+        working-directory: infra
 
       - name: Validar Terraform
         run: terraform validate
+        working-directory: infra
 
       - name: Terraform Plan
         run: terraform plan -input=false -out=terraform.plan -var-file="dev.tfvars"
+        working-directory: infra
 
       - name: Upload do plano como artefato
         uses: actions/upload-artifact@v4
         with:
           name: terraform-plan
-          path: terraform.plan
+          path: infra/terraform.plan

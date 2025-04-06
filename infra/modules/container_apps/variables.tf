@@ -61,3 +61,8 @@ variable "target_port" {
   default     = 80
   description = "Container Target Port"
 }
+
+variable "infra_subnet_id" {
+  type        = string
+  description = "Subnet ID for the Container App Environment"
+}

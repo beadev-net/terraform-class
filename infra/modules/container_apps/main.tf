@@ -3,6 +3,7 @@ resource "azurerm_container_app_environment" "environment" {
   location                   = var.location
   resource_group_name        = var.resource_group_name
   log_analytics_workspace_id = var.log_analytics_workspace_id
+  infrastructure_subnet_id   = var.infra_subnet_id
 }
 
 resource "azurerm_container_app" "container_app" {

@@ -11,4 +11,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 ARG APP_MODE=producer
 ENV APP_MODE=${APP_MODE}
 
-CMD ["sh", "-c", "python ${APP_MODE}.py"]
+CMD ["sh", "-c", "exec python ${APP_MODE}.py"]

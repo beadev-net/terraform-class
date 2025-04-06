@@ -34,6 +34,7 @@ module "container_registry" {
   location            = local.location
   resource_group_name = module.resource_group.resource_group_name
   tags                = local.tags
+  sku                 = "Premium"
 }
 
 module "identity" {
@@ -67,18 +68,18 @@ module "containers_app" {
   log_analytics_workspace_id = module.log_analytics_workspace.id
   registry_identity_id       = module.identity.id
   resource_group_name        = module.resource_group.resource_group_name
-
+  infra_subnet_id            = module.vnet.subnets_id[0]
   containers = {
     producer = {
       name   = "producer"
-      image  = "mcr.microsoft.com/k8se/quickstart:latest"
+      image  = "demoaula04.azurecr.io/producer:0.0.1"
       cpu    = 0.25
       memory = "0.5Gi"
     }
 
     consumer = {
       name   = "consumer"
-      image  = "mcr.microsoft.com/k8se/quickstart:latest"
+      image  = "demoaula04.azurecr.io/consumer:0.0.1"
       cpu    = 0.25
       memory = "0.5Gi"
     }
@@ -93,4 +94,58 @@ module "storage_account" {
   public_network_access_enabled = true
   queue_name                    = "myfirstqueue"
   tags                          = local.tags
+}
+
+module "vnet" {
+  source              = "./modules/network"
+  name                = local.name
+  location            = local.location
+  resource_group_name = module.resource_group.resource_group_name
+  tags                = local.tags
+  address_space       = ["10.0.0.0/16"]
+  subnets = [
+    {
+      name             = "sntcontainerapps"
+      address_prefixes = ["10.0.0.0/23"],
+      # delegation = {
+      #   name = "subnet1delegation"
+      #   service_delegation = {
+      #     name    = "Microsoft.App/environments"
+      #     actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
+      #   }
+      # }
+    },
+    {
+      name             = "sntinfra"
+      address_prefixes = ["10.0.90.0/24"],
+    }
+  ]
+}
+
+resource "azurerm_private_endpoint" "pvt_storageaccount" {
+  name                = "pvt_storageaccount"
+  location            = local.location
+  resource_group_name = module.resource_group.resource_group_name
+  subnet_id           = module.vnet.subnets_id[1]
+
+  private_service_connection {
+    name                           = "pvt_storageaccount_connection"
+    private_connection_resource_id = module.storage_account.id
+    is_manual_connection           = false
+    subresource_names              = ["queue"]
+  }
+}
+
+resource "azurerm_private_endpoint" "pvt_acr" {
+  name                = "pvt_acr"
+  location            = local.location
+  resource_group_name = module.resource_group.resource_group_name
+  subnet_id           = module.vnet.subnets_id[1]
+
+  private_service_connection {
+    name                           = "pvt_acr_connection"
+    private_connection_resource_id = module.container_registry.id
+    is_manual_connection           = false
+    subresource_names              = ["registry"]
+  }
 }
