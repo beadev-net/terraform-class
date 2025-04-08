@@ -1,6 +1,9 @@
 name: Terraform Plan & Apply with Approval
 
 on:
+  push:
+    tags:
+      - v*
   workflow_dispatch:
     inputs:
       environment:
