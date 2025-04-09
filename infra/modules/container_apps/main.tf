@@ -19,6 +19,14 @@ resource "azurerm_container_app" "container_app" {
       image  = each.value.image
       cpu    = each.value.cpu
       memory = each.value.memory
+
+      dynamic "env" {
+        for_each = var.env_vars
+        content {
+          name  = env.key
+          value = env.value
+        }
+      }
     }
   }
 

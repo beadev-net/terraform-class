@@ -1,13 +1,19 @@
 import sys
 import os
 from azure.storage.queue import QueueClient
+from azure.identity import DefaultAzureCredential
 import time
 import logging
 
 queue_name = os.getenv("QUEUE_NAME", "myfirstqueue")
-connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING", "")
+connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING", None)
+account_url = os.getenv("AZURE_STORAGE_ACCOUNT_URL", None)
 
-queue_client = QueueClient.from_connection_string(connection_string, queue_name)
+if not connection_string:
+    credential = DefaultAzureCredential()
+    queue_client = QueueClient(account_url=account_url, queue_name=queue_name, credential=credential)
+else:
+    queue_client = QueueClient.from_connection_string(connection_string, queue_name)
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)

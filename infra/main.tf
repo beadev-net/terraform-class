@@ -71,6 +71,7 @@ module "containers_app" {
   registry_identity_id       = module.identity.id
   resource_group_name        = module.resource_group.resource_group_name
   infra_subnet_id            = module.vnet.subnets_id[0]
+  external_enabled           = false
   containers = {
     producer = {
       name   = "producer"
